@@ -2,3 +2,4 @@ node_modules/
 dbml/
 .env
 .idea/
+build/
