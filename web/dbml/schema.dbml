@@ -6,19 +6,20 @@ Table Borrow {
   id Int [pk, increment]
   userLogin String [not null]
   joyconsTaken Int [not null]
-  openings Opening [not null]
+  borrowOpeningId Int [unique, not null]
+  returnOpeningId Int [unique, not null]
   user User [not null]
+  borrowOpening Opening [not null]
+  returnOpening Opening [not null]
 }
 
 Table Opening {
-  borrowId Int [not null]
-  date DateTime [not null]
-  type OpeningType [not null]
-  borrow Borrow [not null]
-
-  indexes {
-    (borrowId, type) [pk]
-  }
+  id Int [pk, increment]
+  date DateTime
+  code String [not null]
+  codeGeneratedAt DateTime
+  borrow Borrow
+  return Borrow
 }
 
 Table User {
@@ -29,11 +30,8 @@ Table User {
   Borrow Borrow [not null]
 }
 
-Enum OpeningType {
-  Take
-  Return
-}
-
 Ref: Borrow.userLogin > User.login
 
-Ref: Opening.borrowId > Borrow.id
+Ref: Borrow.borrowOpeningId - Opening.id
+
+Ref: Borrow.returnOpeningId - Opening.id

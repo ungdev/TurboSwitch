@@ -5,6 +5,7 @@ import path from "path";
 import cookieParser from 'cookie-parser';
 import jwt, {TokenExpiredError} from 'jsonwebtoken';
 import {XMLParser} from "fast-xml-parser";
+import bodyParser from 'body-parser';
 
 // import * as Sentry from '@sentry/node';
 // import cors from 'cors';
@@ -30,18 +31,52 @@ function authenticate(request: Request) {
     return null;
   }
   try {
-    return jwt.verify(request.cookies['token'], process.env.JWT_SECRET);
+    return (jwt.verify(request.cookies['token'], process.env.JWT_SECRET) as {login: string}).login;
   } catch (e) {
     return null
   }
 }
 
-webRouter.get('/', (request: Request, response: Response) => {
+const validOpening = {
+  codeGeneratedAt: { gte: new Date(Date.now() - 1000 * 60 * 5) },
+};
+
+const currentlyBorrowing = {
+  borrowOpening: { date: { not: null } },
+  returnOpening: { date: null },
+};
+
+async function generateCode() {
+  let code: string;
+  let found;
+  const ciffers = '0123456789';
+  do {
+    code = ciffers[Math.floor(Math.random() * 10)] + ciffers[Math.floor(Math.random() * 10)] + ciffers[Math.floor(Math.random() * 10)] + ciffers[Math.floor(Math.random() * 10)];
+    found = await prisma.opening.findFirst({where: {code}});
+  } while (found)
+  return code;
+}
+
+async function getJoyconsLeft() {
+  const joyconBorrows = await prisma.borrow.findMany({where: {borrowOpening: {OR: [validOpening, {date: {not: null}}]}, returnOpening: {date: {gte: new Date(Date.now())}}}});
+  return Number.parseInt(process.env.TOTAL_JOYCONS) - joyconBorrows.reduce((acc, borrow) => acc + borrow.joyconsTaken, 0);
+}
+
+webRouter.get('/', async (request: Request, response: Response) => {
   const login = authenticate(request);
   if (!login) {
     return response.redirect('/login');
   }
-  response.sendFile(path.join(__dirname, '../www/index.html'));
+  const borrow = await prisma.borrow.findFirst({where: { user: {login}, ...currentlyBorrowing}});
+  if (!borrow) {
+    return response.sendFile(path.join(__dirname, '../www/borrow.html'));
+  }
+  if (request.query['code']) {
+    return response.sendFile(path.join(__dirname, '../www/giveBack.html'));
+  }
+  const code = await generateCode();
+  await prisma.opening.upsert({where: {id: borrow.id}, create: {code, codeGeneratedAt: new Date(Date.now())}, update: {code, codeGeneratedAt: new Date(Date.now())}});
+  return response.redirect(`/?code=${code}`);
 });
 
 webRouter.get('/login', async (request: Request, response: Response) => {
@@ -78,7 +113,7 @@ webRouter.get('/login', async (request: Request, response: Response) => {
     if (!user) {
       await prisma.user.create({data: userData});
     }
-    const token = jwt.sign(userData.login, process.env.JWT_TOKEN, {expiresIn: process.env.JWT_EXPIRES_IN});
+    const token = jwt.sign({login: userData.login}, process.env.JWT_SECRET, {expiresIn: process.env.JWT_EXPIRES_IN});
     return response.cookie('token', token).redirect('/');
   }
   return response.sendFile(path.join(__dirname, '../www/login.html'));
@@ -88,15 +123,24 @@ webRouter.get('/login/cas', async (request: Request, response: Response) => {
   return response.redirect(`https://cas.utt.fr/cas/login?service=${encodeURI(process.env.CAS_SERVICE)}`)
 })
 
-webRouter.post('/', (request: Request, response: Response) => {
-  response.send('Hello World');
+webRouter.post('/', async (request: Request, response: Response) => {
+  const login = authenticate(request);
+  if (!login) {
+    return response.redirect('/login');
+  }
+  const joycons = Number.parseInt(request.body.joycons);
+  if (joycons < 0 || joycons > await getJoyconsLeft()) {
+    return response.send(`Il ne reste plus que ${getJoyconsLeft()} joycons disponibles`);
+  }
+  const code = await generateCode();
+  await prisma.borrow.create({data: {joyconsTaken: joycons, borrowOpening: {create: {code}}, returnOpening: {create: {}}, user: {connect: {login}}}});
+  return response.redirect(`/?code=${code}`);
 });
 
 const apiRouter = Router();
 
 apiRouter.post('/sesame', (request: Request, response: Response) => {
   response.send('Open Sesame');
-
 });
 
 // Initiate Sentry
@@ -113,6 +157,7 @@ apiRouter.post('/sesame', (request: Request, response: Response) => {
 // app.use(cors(), helmet());
 
 app.use('', cookieParser());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use('', webRouter);
 

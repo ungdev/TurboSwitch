@@ -12,20 +12,24 @@ datasource db {
 }
 
 model Borrow {
-  id           Int       @id @default(autoincrement())
-  userLogin    String
-  joyconsTaken Int
-  openings     Opening[]
-  user         User      @relation(fields: [userLogin], references: [login])
+  id              Int    @id @default(autoincrement())
+  userLogin       String
+  joyconsTaken    Int
+  borrowOpeningId Int    @unique
+  returnOpeningId Int    @unique
+
+  user          User    @relation(fields: [userLogin], references: [login])
+  borrowOpening Opening @relation(name: "borrowOpening", fields: [borrowOpeningId], references: [id])
+  returnOpening Opening @relation(name: "borrowClosing", fields: [returnOpeningId], references: [id])
 }
 
 model Opening {
-  borrowId Int
-  date     DateTime
-  type     OpeningType
-  borrow   Borrow      @relation(fields: [borrowId], references: [id])
-
-  @@id([borrowId, type])
+  id     Int      @id @default(autoincrement())
+  date   DateTime?
+  code   String?
+  codeGeneratedAt DateTime?
+  borrow Borrow?  @relation("borrowOpening")
+  return Borrow?  @relation("borrowClosing")
 }
 
 model User {
@@ -34,9 +38,4 @@ model User {
   lastName  String
   mail      String   @unique
   Borrow    Borrow[]
-}
-
-enum OpeningType {
-  Take
-  Return
 }
