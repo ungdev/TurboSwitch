@@ -1,0 +1,39 @@
+//// ------------------------------------------------------
+//// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+//// ------------------------------------------------------
+
+Table Borrow {
+  id Int [pk, increment]
+  userLogin String [not null]
+  joyconsTaken Int [not null]
+  openings Opening [not null]
+  user User [not null]
+}
+
+Table Opening {
+  borrowId Int [not null]
+  date DateTime [not null]
+  type OpeningType [not null]
+  borrow Borrow [not null]
+
+  indexes {
+    (borrowId, type) [pk]
+  }
+}
+
+Table User {
+  login String [pk]
+  firstName String [not null]
+  lastName String [not null]
+  mail String [unique, not null]
+  Borrow Borrow [not null]
+}
+
+Enum OpeningType {
+  Take
+  Return
+}
+
+Ref: Borrow.userLogin > User.login
+
+Ref: Opening.borrowId > Borrow.id

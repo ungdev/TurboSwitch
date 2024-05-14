@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator dbml {
+  provider = "prisma-dbml-generator"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Borrow {
+  id           Int       @id @default(autoincrement())
+  userLogin    String
+  joyconsTaken Int
+  openings     Opening[]
+  user         User      @relation(fields: [userLogin], references: [login])
+}
+
+model Opening {
+  borrowId Int
+  date     DateTime
+  type     OpeningType
+  borrow   Borrow      @relation(fields: [borrowId], references: [id])
+
+  @@id([borrowId, type])
+}
+
+model User {
+  login     String   @id
+  firstName String
+  lastName  String
+  mail      String   @unique
+  Borrow    Borrow[]
+}
+
+enum OpeningType {
+  Take
+  Return
+}
