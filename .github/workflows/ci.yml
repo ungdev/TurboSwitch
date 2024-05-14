@@ -10,7 +10,7 @@ jobs:
     if: ${{ github.event_name != 'pull_request' && (github.ref == 'refs/heads/main') }}
     runs-on: ubuntu-latest
     env:
-      RESOURCE_NAME: ${{ 'turboswitch' }}
+      RESOURCE_NAME: ${{ 'turbo-switch' }}
     steps:
       - uses: actions/checkout@v3
       - name: Install oc
