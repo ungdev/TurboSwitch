@@ -24,12 +24,12 @@ model Borrow {
 }
 
 model Opening {
-  id     Int      @id @default(autoincrement())
-  date   DateTime?
-  code   String?
+  id              Int       @id @default(autoincrement())
+  date            DateTime?
+  code            String?
   codeGeneratedAt DateTime?
-  borrow Borrow?  @relation("borrowOpening")
-  return Borrow?  @relation("borrowClosing")
+  borrow          Borrow?   @relation("borrowOpening")
+  return          Borrow?   @relation("borrowClosing")
 }
 
 model User {

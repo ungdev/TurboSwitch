@@ -16,7 +16,7 @@ Table Borrow {
 Table Opening {
   id Int [pk, increment]
   date DateTime
-  code String [not null]
+  code String
   codeGeneratedAt DateTime
   borrow Borrow
   return Borrow
