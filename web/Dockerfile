@@ -10,7 +10,7 @@ RUN npm i -g pnpm && pnpm install --frozen-lockfile --prod=false
 
 COPY --chown=node:node . .
 
-RUN pnpm next build
+RUN pnpm build
 
 ENV NODE_ENV production
 
@@ -18,4 +18,4 @@ RUN pnpm install -P
 
 USER node
 
-CMD pnpm next start -p 8080
+CMD pnpm start
