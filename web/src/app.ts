@@ -55,16 +55,8 @@ async function generateCode() {
 }
 
 async function getJoyconsLeft() {
-  const joyconBorrows = await prisma.borrow.findMany({
-    where: {
-      borrowOpening: { OR: [validOpening, { date: { not: null } }] },
-      returnOpening: { date: { gte: new Date(Date.now()) } },
-    },
-  });
-  return (
-    Number.parseInt(process.env.TOTAL_JOYCONS) -
-    joyconBorrows.reduce((acc, borrow) => acc + borrow.joyconsTaken, 0)
-  );
+  const joyconBorrows = await prisma.borrow.findMany({where: {borrowOpening: {OR: [validOpening, {date: {not: null}}]}, returnOpening: {date: {not: null}}}});
+  return Number.parseInt(process.env.TOTAL_JOYCONS) - joyconBorrows.reduce((acc, borrow) => acc + borrow.joyconsTaken, 0);
 }
 
 webRouter.get("/", async (request: Request, response: Response) => {
@@ -72,21 +64,17 @@ webRouter.get("/", async (request: Request, response: Response) => {
   if (!login) {
     return response.redirect("/login");
   }
+  if (request.query['code']) {
+    return response.sendFile(path.join(__dirname, '../www/getCode.html'));
+  }
   const borrow = await prisma.borrow.findFirst({
     where: { user: { login }, ...currentlyBorrowing },
   });
   if (!borrow) {
     return response.sendFile(path.join(__dirname, "../www/borrow.html"));
   }
-  if (request.query["code"]) {
-    return response.sendFile(path.join(__dirname, "../www/giveBack.html"));
-  }
   const code = await generateCode();
-  await prisma.opening.upsert({
-    where: { id: borrow.id },
-    create: { code, codeGeneratedAt: new Date(Date.now()) },
-    update: { code, codeGeneratedAt: new Date(Date.now()) },
-  });
+  await prisma.borrow.update({where: {id: borrow.id}, data: {returnOpening: {upsert: {create: {code, codeGeneratedAt: new Date(Date.now())}, update: {code, codeGeneratedAt: new Date(Date.now())}}}}});
   return response.redirect(`/?code=${code}`);
 });
 
