@@ -40,7 +40,7 @@ export async function getJoyconsLeft() {
         { createdAt: { gte: new Date(Date.now() - BORROW_TIMEOUT) } },
         { borrowOpening: { date: { not: null } } },
       ],
-      returnOpening: { date: { not: null } },
+      returnOpening: { date: null },
     },
   });
   return (
