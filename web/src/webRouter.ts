@@ -184,6 +184,10 @@ webRouter.get("/down", async (request: Request, response: Response) => {
   response.sendFile(path.join(__dirname, "../www/down.html"));
 });
 
+webRouter.get('/legal', async (request: Request, response: Response) => {
+  return response.sendFile(path.join(__dirname, "../www/legal.html"));
+})
+
 webRouter.use(async (request: Request, response: Response) => {
   return response.redirect("/");
 });
