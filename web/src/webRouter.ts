@@ -4,12 +4,12 @@ import { XMLParser } from "fast-xml-parser";
 import jwt from "jsonwebtoken";
 import { prisma } from "./prisma";
 import {
-  authenticate,
+  authenticate, formatOpening,
   generateCode,
   generateNewCode,
   getJoyconsLeft,
   getLastTimeChestWasAlive,
-  getWaitingOpening,
+  getWaitingOpening, OPENING_INCLUDE_BEFORE_FORMATTING,
 } from "./utils";
 
 const webRouter = Router();
@@ -137,16 +137,16 @@ webRouter.post("/borrow", async (request: Request, response: Response) => {
 
 webRouter.get('/forceOpen', async (request: Request, response: Response) => {
   if (!chestAlive()) return response.redirect('/down');
-  if (!request.query.id) return response.redirect('/');
-  if (!authenticate(request)) return response.redirect('/login');
-  const alreadyOpened = await prisma.opening.count({
-    where: { id: Number.parseInt(request.query.id as string), date: null },
-  }) == 0;
-  if (alreadyOpened) {
+  if (!request.query['id']) return response.redirect('/');
+  const opening = formatOpening(await prisma.opening.findUnique({
+    where: { id: Number.parseInt(request.query.id as string), date: null, borrow: null },
+    ...OPENING_INCLUDE_BEFORE_FORMATTING
+  }));
+  if (!opening) {
     return response.redirect('/');
   }
-  const newCode = generateNewCode(Number.parseInt(request.query.id as string));
-  response.render(path.join(__dirname, '../www/code.html'), { code: newCode });
+  const newCode = await generateNewCode(Number.parseInt(request.query.id as string));
+  response.render(path.join(__dirname, '../www/getCode.html'), { code: newCode, joycons: opening.borrow.joyconsTaken, type: opening.type });
 });
 
 webRouter.get("/down", async (request: Request, response: Response) => {

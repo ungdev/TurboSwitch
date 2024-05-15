@@ -49,7 +49,7 @@ export async function getJoyconsLeft() {
   );
 }
 
-const OPENING_INCLUDE_BEFORE_FORMATTING = {
+export const OPENING_INCLUDE_BEFORE_FORMATTING = {
   include: {
     borrow: true,
     return: true,
