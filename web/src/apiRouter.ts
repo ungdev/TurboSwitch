@@ -31,9 +31,15 @@ apiRouter.post("/sesame", async (request: Request, response: Response) => {
       codeGeneratedAt: { gte: new Date(Date.now() - CODE_LIFETIME) },
     },
     select: {
+      id: true,
       return: {
         select: {
           returnOpeningId: true,
+          returnOpening: {
+            select: {
+              date: true,
+            },
+          },
         },
       },
     },
@@ -44,8 +50,16 @@ apiRouter.post("/sesame", async (request: Request, response: Response) => {
     return response.status(403).send("Invalid sesame");
   }
 
-  if (opening.return) {
+  if (!opening.return.returnOpening.date) {
     const returnCode = await generateCode();
+    await prisma.opening.update({
+      where: {
+        id: opening.id,
+      },
+      data: {
+        date: new Date(),
+      },
+    });
     await prisma.opening.update({
       where: {
         id: opening.return.returnOpeningId,
