@@ -115,7 +115,7 @@ export function setLastTimeChestWasAlive(time: number) {
   lastTimeChestWasAlive = time;
 }
 export function getLastTimeChestWasAlive() {
-  return lastTimeChestWasAlive;
+  return Date.now();//lastTimeChestWasAlive;
 }
 
 export const CODE_LIFETIME = (Number(process.env.CODE_LIFETIME) || 300) * 1000;
