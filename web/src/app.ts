@@ -1,7 +1,6 @@
-import express from "express";
+import express, { json, urlencoded } from "express";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
-import bodyParser from "body-parser";
 import * as Sentry from "@sentry/node";
 import webRouter from "./webRouter";
 import apiRouter from "./apiRouter";
@@ -32,7 +31,8 @@ if (process.env.SENTRY_DSN) {
 // app.use(cors(), helmet());
 
 app.use("", cookieParser());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(json());
+app.use(urlencoded({ extended: true }));
 
 // Main routes
 app.use(process.env.API_PREFIX, apiRouter);

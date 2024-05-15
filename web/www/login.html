@@ -60,7 +60,12 @@
                 </div>
 
                 <div class="mt-5">
-                    <a href="/login/cas"
+                    <div class="flex items-center">
+                        <input id="link-checkbox" type="checkbox" value="" onchange="enableLink(event.target.checked)" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                        <label for="link-checkbox" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">J'accepte les <a href="/legal" class="text-blue-600 dark:text-blue-500 hover:underline">conditions générales d'utilisation</a>.</label>
+                    </div>
+
+                    <a href="/login/cas" id="connect" onclick="handleClick()"
                         class="w-full py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-white dark:hover:bg-neutral-800 font-bold">
                         <img class="w-6 h-auto"
                             src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQJ1ZKoT1PRAT6Mevq78RfRYeh3Hhgm-NhdVbwC1Yioew&s"
@@ -81,7 +86,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 duration-300 transition-all absolute">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
             </svg>   
-        </div>
+        </button>
     </div>
 
 
@@ -116,6 +121,16 @@
                 document.querySelector(".svg-containers").children[0].classList.remove("opacity-0")
                 document.querySelector(".svg-containers").children[1].classList.add("opacity-0");
             }
+        }
+
+        let isLinkEnabled = false;
+        function enableLink(enabled) {
+            console.log(enabled);
+            isLinkEnabled = enabled;
+            document.getElementById("connect").classList.toggle("cursor-not-allowed", !isLinkEnabled);
+        }
+        function handleClick() {
+            if (!isLinkEnabled) event.preventDefault();
         }
     </script>
 </body>

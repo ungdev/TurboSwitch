@@ -68,8 +68,8 @@ apiRouter.get("/ping", async (request: Request, response: Response) => {
 apiRouter.get("/reports", async (request: Request, response: Response) => {
   const borrows = await prisma.borrow.findMany({
     where: {
-      returnOpeningId: {
-        not: null,
+      returnOpening: {
+        date: null,
       },
     },
     include: {
