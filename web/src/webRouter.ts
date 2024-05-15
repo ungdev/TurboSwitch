@@ -14,77 +14,32 @@ import {
 
 const webRouter = Router();
 
-webRouter.use(
-  async (request: Request, response: Response, next: NextFunction) => {
-    if (request.url.startsWith('/legal')) {
-      return next();
-    }
-    // route /down
-    const chestAlive =
-      Date.now() - getLastTimeChestWasAlive() <
-      Number.parseInt(process.env.TIME_BEFORE_CHEST_DEATH) * 1000;
-    if (!request.url.startsWith("/down") && !chestAlive) {
-      return response.redirect("/down");
-    }
-    if (request.url.startsWith("/down") && chestAlive) {
-      return response.redirect("/");
-    }
-    if (request.url.startsWith("/down") && !chestAlive) {
-      return next();
-    }
-    // route /login
-    const login = authenticate(request);
-    if (!request.url.startsWith("/login") && !login) {
-      return response.redirect("/login");
-    }
-    if (request.url.startsWith("/login") && login) {
-      return response.redirect("/");
-    }
-    if (request.url.startsWith("/login") && !login) {
-      return next();
-    }
-    // route /logout
-    if (request.url.startsWith("/logout") && login) {
-      return next();
-    }
-    // route /borrow
-    const opening = await getWaitingOpening(login);
-    if (!request.url.startsWith("/borrow") && !opening) {
-      return response.redirect("/borrow");
-    }
-    if (request.url === "/borrow" && opening) {
-      return response.redirect("/");
-    }
-    if (request.url.startsWith("/borrow") && !opening) {
-      return next();
-    }
-    // route /code
-    if (!request.url.startsWith("/code") && opening) {
-      return response.redirect("/code");
-    }
-    if (request.url.startsWith("/code") && !opening) {
-      return response.redirect("/");
-    }
-    if (request.url.startsWith("/code") && opening) {
-      return next();
-    }
-    return next();
-  }
-);
+function chestAlive() {
+  return Date.now() - getLastTimeChestWasAlive() < Number.parseInt(process.env.TIME_BEFORE_CHEST_DEATH) * 1000;
+}
 
 webRouter.get("/borrow", async (request: Request, response: Response) => {
+  if (!chestAlive()) return response.redirect('/down');
+  const login = authenticate(request);
+  if (!authenticate(request)) return response.redirect('/login');
+  if (await getWaitingOpening(login)) return response.redirect('/code');
   const joyconsLeft = await getJoyconsLeft();
   return response.render(path.join(__dirname, '../www/borrow.html'), { joyconsLeft });
 });
 
 webRouter.get("/code", async (request: Request, response: Response) => {
   const login = authenticate(request);
+  if (!login) return response.redirect('/login');
+  if (!chestAlive()) return response.redirect('/down');
+  if (!await getWaitingOpening(login)) return response.redirect('/');
   const opening = await getWaitingOpening(login);
   const newCode = await generateNewCode(opening.id);
   return response.render(path.join(__dirname, "../www/getCode.html"), { code: newCode, joycons: opening.borrow.joyconsTaken, type: opening.type });
 });
 
 webRouter.get("/login", async (request: Request, response: Response) => {
+  if (!chestAlive()) return response.redirect('/down');
+  if (authenticate(request)) return response.redirect('/');
   if (!request.query["ticket"]) {
     return response.sendFile(path.join(__dirname, "../www/login.html"));
   }
@@ -151,8 +106,10 @@ webRouter.get('/logout', async (request: Request, response: Response) => {
 
 webRouter.post("/borrow", async (request: Request, response: Response) => {
   const login = authenticate(request);
-  if (await getWaitingOpening(login)) return response.redirect("/code");
-  if (!request.body.joycons) return response.redirect("/borrow");
+  if (!login) return response.redirect('/login');
+  if (!chestAlive()) return response.redirect('/down');
+  if (await getWaitingOpening(login)) return response.redirect('/code');
+  if (!request.body.joycons) return response.redirect('/borrow');
   const joycons = Number.parseInt(request.body.joycons);
   if (Number.isNaN(joycons)) {
     return response.redirect("/borrow");
@@ -178,13 +135,36 @@ webRouter.post("/borrow", async (request: Request, response: Response) => {
   return response.redirect('/code');
 });
 
+webRouter.get('/forceOpen', async (request: Request, response: Response) => {
+  if (!chestAlive()) return response.redirect('/down');
+  if (!request.query.id) return response.redirect('/');
+  if (!authenticate(request)) return response.redirect('/login');
+  const alreadyOpened = await prisma.opening.count({
+    where: { id: Number.parseInt(request.query.id as string), date: null },
+  }) == 0;
+  if (alreadyOpened) {
+    return response.redirect('/');
+  }
+  const newCode = generateNewCode(Number.parseInt(request.query.id as string));
+  response.render(path.join(__dirname, '../www/code.html'), { code: newCode });
+});
+
 webRouter.get("/down", async (request: Request, response: Response) => {
+  if (chestAlive()) return response.redirect('/');
   response.sendFile(path.join(__dirname, "../www/down.html"));
 });
 
 webRouter.get('/legal', async (request: Request, response: Response) => {
   return response.sendFile(path.join(__dirname, "../www/legal.html"));
-})
+});
+
+webRouter.get('/', async (request: Request, response: Response) => {
+  if (!chestAlive()) return response.redirect('/down');
+  const login = authenticate(request);
+  if (!login) return response.redirect('/login');
+  if (await getWaitingOpening(login)) return response.redirect('/code');
+  return response.redirect('/borrow');
+});
 
 webRouter.use(async (request: Request, response: Response) => {
   return response.redirect("/");
