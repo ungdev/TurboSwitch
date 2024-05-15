@@ -1,6 +1,6 @@
-import {Request} from "express";
+import { Request } from "express";
 import jwt from "jsonwebtoken";
-import {prisma, prismaUtils} from "./prisma";
+import { prisma, prismaUtils } from "./prisma";
 import { Prisma } from "@prisma/client";
 
 export function authenticate(request: Request) {
@@ -34,8 +34,18 @@ export async function generateCode() {
 }
 
 export async function getJoyconsLeft() {
-  const joyconBorrows = await prisma.borrow.findMany({where: {borrowOpening: {OR: [prismaUtils.validOpening, {date: {not: null}}]}, returnOpening: {date: {not: null}}}});
-  return Number.parseInt(process.env.TOTAL_JOYCONS) - joyconBorrows.reduce((acc, borrow) => acc + borrow.joyconsTaken, 0);
+  const joyconBorrows = await prisma.borrow.findMany({
+    where: {
+      borrowOpening: {
+        OR: [prismaUtils.validOpening, { date: { not: null } }],
+      },
+      returnOpening: { date: { not: null } },
+    },
+  });
+  return (
+    Number.parseInt(process.env.TOTAL_JOYCONS) -
+    joyconBorrows.reduce((acc, borrow) => acc + borrow.joyconsTaken, 0)
+  );
 }
 
 const OPENING_INCLUDE_BEFORE_FORMATTING = {
@@ -45,19 +55,24 @@ const OPENING_INCLUDE_BEFORE_FORMATTING = {
   },
 } as const;
 
-type FormattedOpening = Omit<Prisma.OpeningGetPayload<typeof OPENING_INCLUDE_BEFORE_FORMATTING>, 'return'> & {type: 'borrow' | 'return'}
+type FormattedOpening = Omit<
+  Prisma.OpeningGetPayload<typeof OPENING_INCLUDE_BEFORE_FORMATTING>,
+  "return"
+> & { type: "borrow" | "return" };
 
-export function formatOpening(opening: Prisma.OpeningGetPayload<typeof OPENING_INCLUDE_BEFORE_FORMATTING>): FormattedOpening {
+export function formatOpening(
+  opening: Prisma.OpeningGetPayload<typeof OPENING_INCLUDE_BEFORE_FORMATTING>
+): FormattedOpening {
   if (!opening) {
     return null;
   }
   if (opening.return) {
     opening.borrow = opening.return;
     delete opening.return;
-    return {...opening, type: 'return'};
+    return { ...opening, type: "return" };
   }
   delete opening.return;
-  return {...opening, type: 'borrow'};
+  return { ...opening, type: "borrow" };
 }
 
 export async function getWaitingOpening(userLogin: string) {
@@ -65,10 +80,7 @@ export async function getWaitingOpening(userLogin: string) {
     where: {
       date: null,
       code: { not: null },
-      OR: [
-        { borrow: { userLogin } },
-        { return: { userLogin } },
-      ],
+      OR: [{ borrow: { userLogin } }, { return: { userLogin } }],
     },
     ...OPENING_INCLUDE_BEFORE_FORMATTING,
   });
@@ -79,10 +91,7 @@ export async function getWaitingOpeningWithValidCode(userLogin: string) {
   const opening = await prisma.opening.findFirst({
     where: {
       ...prismaUtils.validOpening,
-      OR: [
-        { borrow: { userLogin } },
-        { return: { userLogin } }
-      ]
+      OR: [{ borrow: { userLogin } }, { return: { userLogin } }],
     },
     ...OPENING_INCLUDE_BEFORE_FORMATTING,
   });
@@ -108,3 +117,5 @@ export function setLastTimeChestWasAlive(time: number) {
 export function getLastTimeChestWasAlive() {
   return lastTimeChestWasAlive;
 }
+
+export const CODE_LIFETIME = (Number(process.env.CODE_LIFETIME) || 300) * 1000;

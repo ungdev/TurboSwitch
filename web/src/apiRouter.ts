@@ -1,12 +1,15 @@
-import {Request, Response, Router} from "express";
-import {prisma} from "./prisma";
+import { Request, Response, Router } from "express";
+import { prisma } from "./prisma";
 import logger from "./logger";
-import {generateCode, setLastTimeChestWasAlive} from "./utils";
+import { CODE_LIFETIME, generateCode, setLastTimeChestWasAlive } from "./utils";
 
 const apiRouter = Router();
 
 apiRouter.use((request: Request, response: Response, next) => {
-  if (!request.headers['Authorisation'] || request.headers['Authorisation'] !== `Bearer ${process.env.API_KEY}`) {
+  if (
+    !request.headers["Authorization"] ||
+    request.headers["Authorization"] !== `Bearer ${process.env.API_KEY}`
+  ) {
     return response.status(403).send("Invalid API Key");
   }
   return next();
@@ -25,7 +28,7 @@ apiRouter.post("/sesame", async (request: Request, response: Response) => {
     where: {
       code: sesame,
       date: null,
-      codeGeneratedAt: new Date(Date.now() - 1000 * 60 * 5),
+      codeGeneratedAt: new Date(Date.now() - CODE_LIFETIME),
     },
     select: {
       return: {
