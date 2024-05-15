@@ -28,7 +28,7 @@ apiRouter.post("/sesame", async (request: Request, response: Response) => {
     where: {
       code: sesame,
       date: null,
-      codeGeneratedAt: new Date(Date.now() - CODE_LIFETIME),
+      codeGeneratedAt: { gte: new Date(Date.now() - CODE_LIFETIME) },
     },
     select: {
       return: {
