@@ -6,16 +6,13 @@ import { CODE_LIFETIME, generateCode, setLastTimeChestWasAlive } from "./utils";
 const apiRouter = Router();
 
 apiRouter.use((request: Request, response: Response, next) => {
-  if (
-    !request.headers["Authorization"] ||
-    request.headers["Authorization"] !== `Bearer ${process.env.API_KEY}`
-  ) {
+  if (!request.headers['authorization'] || request.headers['authorization'] !== `Bearer ${process.env.API_KEY}`) {
     return response.status(403).send("Invalid API Key");
   }
   return next();
 });
 
-apiRouter.post("/sesame", async (request: Request, response: Response) => {
+apiRouter.post("/api/sesame", async (request: Request, response: Response) => {
   const sesame: string | undefined = request.body.code;
   if (!sesame) return response.status(400).send("Missing code");
   if (
@@ -63,6 +60,10 @@ apiRouter.post("/sesame", async (request: Request, response: Response) => {
 apiRouter.get("/ping", async (request: Request, response: Response) => {
   setLastTimeChestWasAlive(Date.now());
   return response.status(200).send("Good news ! (Me too)");
+});
+
+apiRouter.use(async (request: Request, response: Response) => {
+  return response.status(404).send("captain l'url làààààà");
 });
 
 export default apiRouter;
