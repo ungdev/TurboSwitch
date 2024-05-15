@@ -38,7 +38,7 @@ webRouter.use(
     if (request.url.startsWith("/login") && login) {
       return response.redirect("/");
     }
-    if (request.url.startsWith("/login") && login) {
+    if (request.url.startsWith("/login") && !login) {
       return next();
     }
     // route /borrow
@@ -102,36 +102,36 @@ webRouter.get("/login", async (request: Request, response: Response) => {
   const resData: {
     ["cas:serviceResponse"]:
       | {
-      ["cas:authenticationSuccess"]: {
-        ["cas:attributes"]: {
-          "cas:uid": string;
-          "cas:mail": string;
-          "cas:sn": string;
-          "cas:givenName": string;
-        };
-      };
-    }
+          ["cas:authenticationSuccess"]: {
+            ["cas:attributes"]: {
+              "cas:uid": string;
+              "cas:mail": string;
+              "cas:sn": string;
+              "cas:givenName": string;
+            };
+          };
+        }
       | { "cas:authenticationFailure": unknown };
   } = new XMLParser().parse(await res.text());
   if ("cas:authenticationFailure" in resData["cas:serviceResponse"]) {
-    return response.redirect('/login');
+    return response.redirect("/login");
   }
   const userData = {
     login:
       resData["cas:serviceResponse"]["cas:authenticationSuccess"][
         "cas:attributes"
-        ]["cas:uid"],
+      ]["cas:uid"],
     mail: resData["cas:serviceResponse"]["cas:authenticationSuccess"][
       "cas:attributes"
-      ]["cas:mail"],
+    ]["cas:mail"],
     lastName:
       resData["cas:serviceResponse"]["cas:authenticationSuccess"][
         "cas:attributes"
-        ]["cas:sn"],
+      ]["cas:sn"],
     firstName:
       resData["cas:serviceResponse"]["cas:authenticationSuccess"][
         "cas:attributes"
-        ]["cas:givenName"],
+      ]["cas:givenName"],
   };
   let user = await prisma.user.findUnique({
     where: { login: userData.login },

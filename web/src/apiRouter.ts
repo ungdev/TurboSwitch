@@ -65,6 +65,10 @@ apiRouter.get("/ping", async (request: Request, response: Response) => {
   return response.status(200).send("Good news ! (Me too)");
 });
 
+apiRouter.get("/reports", async (request: Request, response: Response) => {
+  //
+});
+
 apiRouter.use(async (request: Request, response: Response) => {
   return response.status(404).send("captain l'url làààààà");
 });
