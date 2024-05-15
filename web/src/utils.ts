@@ -81,13 +81,23 @@ export async function getWaitingOpening(userLogin: string) {
     where: {
       date: null,
       code: { not: null },
-      OR: [{ borrow: { userLogin } }, { return: { userLogin } }],
-      borrow: {
-        OR: [
-          null,
-          { createdAt: { gte: new Date(Date.now() - BORROW_TIMEOUT) } },
-        ],
-      },
+      AND: [
+        {
+          OR: [{ borrow: { userLogin } }, { return: { userLogin } }],
+        },
+        {
+          OR: [
+            {
+              borrow: null,
+            },
+            {
+              borrow: {
+                createdAt: { gte: new Date(Date.now() - BORROW_TIMEOUT) },
+              },
+            },
+          ],
+        },
+      ],
     },
     ...OPENING_INCLUDE_BEFORE_FORMATTING,
   });
@@ -98,13 +108,23 @@ export async function getWaitingOpeningWithValidCode(userLogin: string) {
   const opening = await prisma.opening.findFirst({
     where: {
       ...prismaUtils.validOpening,
-      OR: [{ borrow: { userLogin } }, { return: { userLogin } }],
-      borrow: {
-        OR: [
-          null,
-          { createdAt: { gte: new Date(Date.now() - BORROW_TIMEOUT) } },
-        ],
-      },
+      AND: [
+        {
+          OR: [{ borrow: { userLogin } }, { return: { userLogin } }],
+        },
+        {
+          OR: [
+            {
+              borrow: null,
+            },
+            {
+              borrow: {
+                createdAt: { gte: new Date(Date.now() - BORROW_TIMEOUT) },
+              },
+            },
+          ],
+        },
+      ],
     },
     ...OPENING_INCLUDE_BEFORE_FORMATTING,
   });
