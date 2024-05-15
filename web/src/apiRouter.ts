@@ -1,7 +1,12 @@
 import { Request, Response, Router } from "express";
 import { prisma } from "./prisma";
 import logger from "./logger";
-import { CODE_LIFETIME, generateCode, setLastTimeChestWasAlive } from "./utils";
+import {
+  CODE_LIFETIME,
+  generateCode,
+  generateNewCode,
+  setLastTimeChestWasAlive,
+} from "./utils";
 
 const apiRouter = Router();
 
@@ -32,14 +37,9 @@ apiRouter.post("/sesame", async (request: Request, response: Response) => {
     },
     select: {
       id: true,
-      return: {
+      borrow: {
         select: {
           returnOpeningId: true,
-          returnOpening: {
-            select: {
-              date: true,
-            },
-          },
         },
       },
     },
@@ -50,26 +50,16 @@ apiRouter.post("/sesame", async (request: Request, response: Response) => {
     return response.status(403).send("Invalid sesame");
   }
 
-  if (!opening.return.returnOpening.date) {
-    const returnCode = await generateCode();
-    await prisma.opening.update({
-      where: {
-        id: opening.id,
-      },
-      data: {
-        date: new Date(),
-      },
-    });
-    await prisma.opening.update({
-      where: {
-        id: opening.return.returnOpeningId,
-      },
-      data: {
-        code: returnCode,
-        codeGeneratedAt: new Date(),
-      },
-    });
-  }
+  await prisma.opening.update({
+    where: {
+      id: opening.id,
+    },
+    data: {
+      date: new Date(),
+    },
+  });
+
+  if (opening.borrow) await generateNewCode(opening.borrow.returnOpeningId);
 
   return response.status(200).send("Sésame ouvre toi");
 });
