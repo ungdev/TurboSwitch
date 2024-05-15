@@ -17,6 +17,9 @@ const webRouter = Router();
 
 webRouter.use(
   async (request: Request, response: Response, next: NextFunction) => {
+    if (request.url === '/legal') {
+      return next();
+    }
     // route /down
     const chestAlive =
       Date.now() - getLastTimeChestWasAlive() <
