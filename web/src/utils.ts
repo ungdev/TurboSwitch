@@ -106,5 +106,5 @@ export function setLastTimeChestWasAlive(time: number) {
   lastTimeChestWasAlive = time;
 }
 export function getLastTimeChestWasAlive() {
-  return Date.now();//lastTimeChestWasAlive;
+  return lastTimeChestWasAlive;
 }
