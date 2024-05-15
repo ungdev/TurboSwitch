@@ -1,68 +1,73 @@
-import {NextFunction, Request, Response, Router} from "express";
+import { NextFunction, Request, Response, Router } from "express";
 import path from "path";
-import {XMLParser} from "fast-xml-parser";
+import { XMLParser } from "fast-xml-parser";
 import jwt from "jsonwebtoken";
-import {prisma} from "./prisma";
+import { prisma } from "./prisma";
 import {
   authenticate,
   generateCode,
   generateNewCode,
-  getJoyconsLeft, getLastTimeChestWasAlive,
+  getJoyconsLeft,
+  getLastTimeChestWasAlive,
   getWaitingOpening,
-  getWaitingOpeningWithValidCode
+  getWaitingOpeningWithValidCode,
 } from "./utils";
 
 const webRouter = Router();
 
-webRouter.use(async (request: Request, response: Response, next: NextFunction) => {
-  // route /down
-  const chestAlive = Date.now() - getLastTimeChestWasAlive() < Number.parseInt(process.env.TIME_BEFORE_CHEST_DEATH) * 1000;
-  if (!request.url.startsWith('/api') && !request.url.startsWith('/down') && !chestAlive) {
-    return response.redirect('/down');
-  }
-  if (request.url.startsWith('/down') && chestAlive) {
-    return response.redirect('/');
-  }
-  if (request.url.startsWith('/down') && !chestAlive) {
+webRouter.use(
+  async (request: Request, response: Response, next: NextFunction) => {
+    // route /down
+    const chestAlive =
+      Date.now() - getLastTimeChestWasAlive() <
+      Number.parseInt(process.env.TIME_BEFORE_CHEST_DEATH) * 1000;
+    if (!request.url.startsWith("/down") && !chestAlive) {
+      return response.redirect("/down");
+    }
+    if (request.url.startsWith("/down") && chestAlive) {
+      return response.redirect("/");
+    }
+    if (request.url.startsWith("/down") && !chestAlive) {
+      return next();
+    }
+    // route /login
+    const login = authenticate(request);
+    if (!request.url.startsWith("/login") && !login) {
+      return response.redirect("/login");
+    }
+    if (request.url.startsWith("/login") && login) {
+      return response.redirect("/");
+    }
+    if (request.url.startsWith("/login") && login) {
+      return next();
+    }
+    // route /borrow
+    const opening = await getWaitingOpening(login);
+    if (!request.url.startsWith("/borrow") && !opening) {
+      return response.redirect("/borrow");
+    }
+    if (request.url === "/borrow" && opening) {
+      return response.redirect("/");
+    }
+    if (request.url.startsWith("/borrow") && !opening) {
+      return next();
+    }
+    // route /code
+    if (!request.url.startsWith("/code") && opening) {
+      return response.redirect("/code");
+    }
+    if (request.url.startsWith("/code") && !opening) {
+      return response.redirect("/");
+    }
+    if (request.url.startsWith("/code") && opening) {
+      return next();
+    }
     return next();
   }
-  // route /login
-  const login = authenticate(request);
-  if (!request.url.startsWith("/login") && !login) {
-    return response.redirect("/login");
-  }
-  if (request.url.startsWith("/login") && login) {
-    return response.redirect("/");
-  }
-  if (request.url.startsWith("/login") && login) {
-    return next();
-  }
-  // route /borrow
-  const opening = await getWaitingOpening(login);
-  if (!request.url.startsWith("/borrow") && !opening) {
-    return response.redirect("/borrow");
-  }
-  if (request.url === "/borrow" && opening) {
-    return response.redirect("/");
-  }
-  if (request.url.startsWith("/borrow") && !opening) {
-    return next();
-  }
-  // route /code
-  if (!request.url.startsWith('/code') && opening) {
-    return response.redirect('/code');
-  }
-  if (request.url.startsWith('/code') && !opening) {
-    return response.redirect('/');
-  }
-  if (request.url.startsWith('/code') && opening) {
-    return next();
-  }
-  return next();
-});
+);
 
 webRouter.get("/borrow", async (request: Request, response: Response) => {
-  if (!request.query['joyconsLeft']) {
+  if (!request.query["joyconsLeft"]) {
     return response.redirect(`/borrow/?joyconsLeft=${await getJoyconsLeft()}`);
   }
   return response.sendFile(path.join(__dirname, "../www/borrow.html"));
@@ -71,11 +76,18 @@ webRouter.get("/borrow", async (request: Request, response: Response) => {
 webRouter.get("/code", async (request: Request, response: Response) => {
   const login = authenticate(request);
   const opening = await getWaitingOpening(login);
-  if (!request.query['code'] || !request.query['joycons'] || !request.query['type'] || !await getWaitingOpeningWithValidCode(login)) {
+  if (
+    !request.query["code"] ||
+    !request.query["joycons"] ||
+    !request.query["type"] ||
+    !(await getWaitingOpeningWithValidCode(login))
+  ) {
     const newCode = await generateNewCode(opening.id);
-    return response.redirect(`/code/?code=${newCode}&joycons=${opening.borrow.joyconsTaken}&type=${opening.type}`);
+    return response.redirect(
+      `/code/?code=${newCode}&joycons=${opening.borrow.joyconsTaken}&type=${opening.type}`
+    );
   }
-  return response.sendFile(path.join(__dirname, '../www/getCode.html'));
+  return response.sendFile(path.join(__dirname, "../www/getCode.html"));
 });
 
 webRouter.get("/login", async (request: Request, response: Response) => {
@@ -88,36 +100,36 @@ webRouter.get("/login", async (request: Request, response: Response) => {
     const resData: {
       ["cas:serviceResponse"]:
         | {
-        ["cas:authenticationSuccess"]: {
-          ["cas:attributes"]: {
-            "cas:uid": string;
-            "cas:mail": string;
-            "cas:sn": string;
-            "cas:givenName": string;
-          };
-        };
-      }
+            ["cas:authenticationSuccess"]: {
+              ["cas:attributes"]: {
+                "cas:uid": string;
+                "cas:mail": string;
+                "cas:sn": string;
+                "cas:givenName": string;
+              };
+            };
+          }
         | { "cas:authenticationFailure": unknown };
     } = new XMLParser().parse(await res.text());
     if ("cas:authenticationFailure" in resData["cas:serviceResponse"]) {
-      return response.redirect('/login');
+      return response.redirect("/login");
     }
     const userData = {
       login:
         resData["cas:serviceResponse"]["cas:authenticationSuccess"][
           "cas:attributes"
-          ]["cas:uid"],
+        ]["cas:uid"],
       mail: resData["cas:serviceResponse"]["cas:authenticationSuccess"][
         "cas:attributes"
-        ]["cas:mail"],
+      ]["cas:mail"],
       lastName:
         resData["cas:serviceResponse"]["cas:authenticationSuccess"][
           "cas:attributes"
-          ]["cas:sn"],
+        ]["cas:sn"],
       firstName:
         resData["cas:serviceResponse"]["cas:authenticationSuccess"][
           "cas:attributes"
-          ]["cas:givenName"],
+        ]["cas:givenName"],
     };
     let user = await prisma.user.findUnique({
       where: { login: userData.login },
@@ -141,10 +153,8 @@ webRouter.get("/login/cas", async (request: Request, response: Response) => {
 
 webRouter.post("/borrow", async (request: Request, response: Response) => {
   const login = authenticate(request);
-  if (await getWaitingOpening(login))
-    return response.redirect("/code");
-  if (!request.body.joycons)
-    return response.redirect("/borrow");
+  if (await getWaitingOpening(login)) return response.redirect("/code");
+  if (!request.body.joycons) return response.redirect("/borrow");
   const joycons = Number.parseInt(request.body.joycons);
   if (Number.isNaN(joycons)) {
     return response.redirect("/borrow");
@@ -175,7 +185,7 @@ webRouter.get("/down", async (request: Request, response: Response) => {
 });
 
 webRouter.use(async (request: Request, response: Response) => {
-  return response.redirect('/');
+  return response.redirect("/");
 });
 
 export default webRouter;

@@ -34,10 +34,9 @@ if (process.env.SENTRY_DSN) {
 app.use("", cookieParser());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use("", webRouter);
-
 // Main routes
 app.use(process.env.API_PREFIX, apiRouter);
+app.use("", webRouter);
 
 // Not found
 // app.use((request: Request, response: Response) => notFound(response, Error.RouteNotFound));
