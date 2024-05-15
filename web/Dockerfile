@@ -16,7 +16,7 @@ ENV NODE_ENV production
 
 RUN pnpm install -P
 
-RUN pnpm prisma db push
+RUN pnpm pnpx prisma db push
 
 USER node
 
