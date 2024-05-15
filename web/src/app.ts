@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import * as Sentry from "@sentry/node";
 import webRouter from "./webRouter";
 import apiRouter from "./apiRouter";
+import ejs from "ejs";
 
 dotenv.config();
 const app = express();
@@ -20,6 +21,7 @@ if (process.env.SENTRY_DSN) {
   });
   Sentry.setupExpressErrorHandler(app);
 }
+app.engine('html', ejs.renderFile);
 
 // Enable morgan logger
 // app.use(morgan());

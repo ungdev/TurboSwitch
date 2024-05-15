@@ -10,14 +10,13 @@ import {
   getJoyconsLeft,
   getLastTimeChestWasAlive,
   getWaitingOpening,
-  getWaitingOpeningWithValidCode,
 } from "./utils";
 
 const webRouter = Router();
 
 webRouter.use(
   async (request: Request, response: Response, next: NextFunction) => {
-    if (request.url === '/legal') {
+    if (request.url.startsWith('/legal')) {
       return next();
     }
     // route /down
@@ -42,6 +41,10 @@ webRouter.use(
       return response.redirect("/");
     }
     if (request.url.startsWith("/login") && !login) {
+      return next();
+    }
+    // route /logout
+    if (request.url.startsWith("/logout") && login) {
       return next();
     }
     // route /borrow
@@ -70,27 +73,15 @@ webRouter.use(
 );
 
 webRouter.get("/borrow", async (request: Request, response: Response) => {
-  if (!request.query["joyconsLeft"]) {
-    return response.redirect(`/borrow/?joyconsLeft=${await getJoyconsLeft()}`);
-  }
-  return response.sendFile(path.join(__dirname, "../www/borrow.html"));
+  const joyconsLeft = await getJoyconsLeft();
+  return response.render(path.join(__dirname, '../www/borrow.html'), { joyconsLeft });
 });
 
 webRouter.get("/code", async (request: Request, response: Response) => {
   const login = authenticate(request);
   const opening = await getWaitingOpening(login);
-  if (
-    !request.query["code"] ||
-    !request.query["joycons"] ||
-    !request.query["type"] ||
-    !(await getWaitingOpeningWithValidCode(login))
-  ) {
-    const newCode = await generateNewCode(opening.id);
-    return response.redirect(
-      `/code/?code=${newCode}&joycons=${opening.borrow.joyconsTaken}&type=${opening.type}`
-    );
-  }
-  return response.sendFile(path.join(__dirname, "../www/getCode.html"));
+  const newCode = await generateNewCode(opening.id);
+  return response.render(path.join(__dirname, "../www/getCode.html"), { code: newCode, joycons: opening.borrow.joyconsTaken, type: opening.type });
 });
 
 webRouter.get("/login", async (request: Request, response: Response) => {
@@ -154,6 +145,10 @@ webRouter.get("/login/cas", async (request: Request, response: Response) => {
   );
 });
 
+webRouter.get('/logout', async (request: Request, response: Response) => {
+  return response.clearCookie('token').redirect('/');
+});
+
 webRouter.post("/borrow", async (request: Request, response: Response) => {
   const login = authenticate(request);
   if (await getWaitingOpening(login)) return response.redirect("/code");
@@ -180,7 +175,7 @@ webRouter.post("/borrow", async (request: Request, response: Response) => {
       user: { connect: { login } },
     },
   });
-  return response.redirect(`/code/?code=${code}`);
+  return response.redirect('/code');
 });
 
 webRouter.get("/down", async (request: Request, response: Response) => {

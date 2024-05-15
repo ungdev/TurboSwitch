@@ -15,7 +15,7 @@
             <div class="p-4 sm:p-7">
                 <div class="text-center">
                     <h1 class="block text-2xl font-bold text-gray-800 dark:text-white">Emprunter des joycons</h1>
-                    <p class="block text-md text-gray-800 dark:text-white">Joycons disponibles&nbsp;: <span id="joycons-left" class="text-[#2a7fba] font-bold">0</span></p>
+                    <p class="block text-md text-gray-800 dark:text-white">Joycons disponibles&nbsp;: <span class="text-[#2a7fba] font-bold"><%= joyconsLeft %></span></p>
                 </div>
 
                 <form class="flex flex-col items-center justify-center gap-2 mt-4" method="post">
@@ -86,11 +86,6 @@
                 document.querySelector(".svg-containers").children[0].classList.remove("opacity-0")
                 document.querySelector(".svg-containers").children[1].classList.add("opacity-0");
             }
-        }
-
-        window.onload = () => {
-            const urlSearchParams = new URLSearchParams(window.location.search);
-            document.getElementById("joycons-left").innerText = Math.max(0, Math.min(100, Number(urlSearchParams.get("joyconsLeft")) || 0));
         }
     </script>
 </body>
