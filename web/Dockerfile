@@ -10,7 +10,7 @@ RUN npm i -g pnpm && pnpm install --frozen-lockfile --prod=false
 
 COPY --chown=node:node . .
 
-RUN pnpm build
+RUN pnpm prisma generate && pnpm build
 
 ENV NODE_ENV production
 
