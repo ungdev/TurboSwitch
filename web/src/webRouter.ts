@@ -17,7 +17,7 @@ const webRouter = Router();
 webRouter.use(async (request: Request, response: Response, next: NextFunction) => {
   // route /down
   const chestAlive = Date.now() - getLastTimeChestWasAlive() < Number.parseInt(process.env.TIME_BEFORE_CHEST_DEATH) * 1000;
-  if (!request.url.startsWith('/down') && !chestAlive) {
+  if (!request.url.startsWith('/api') && !request.url.startsWith('/down') && !chestAlive) {
     return response.redirect('/down');
   }
   if (request.url.startsWith('/down') && chestAlive) {
