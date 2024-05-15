@@ -91,58 +91,58 @@ webRouter.get("/code", async (request: Request, response: Response) => {
 });
 
 webRouter.get("/login", async (request: Request, response: Response) => {
-  if (request.query["ticket"]) {
-    const res = await fetch(
-      `https://cas.utt.fr/cas/serviceValidate?service=${encodeURI(
-        process.env.CAS_SERVICE
-      )}&ticket=${request.query["ticket"]}`
-    );
-    const resData: {
-      ["cas:serviceResponse"]:
-        | {
-            ["cas:authenticationSuccess"]: {
-              ["cas:attributes"]: {
-                "cas:uid": string;
-                "cas:mail": string;
-                "cas:sn": string;
-                "cas:givenName": string;
-              };
-            };
-          }
-        | { "cas:authenticationFailure": unknown };
-    } = new XMLParser().parse(await res.text());
-    if ("cas:authenticationFailure" in resData["cas:serviceResponse"]) {
-      return response.redirect("/login");
-    }
-    const userData = {
-      login:
-        resData["cas:serviceResponse"]["cas:authenticationSuccess"][
-          "cas:attributes"
-        ]["cas:uid"],
-      mail: resData["cas:serviceResponse"]["cas:authenticationSuccess"][
-        "cas:attributes"
-      ]["cas:mail"],
-      lastName:
-        resData["cas:serviceResponse"]["cas:authenticationSuccess"][
-          "cas:attributes"
-        ]["cas:sn"],
-      firstName:
-        resData["cas:serviceResponse"]["cas:authenticationSuccess"][
-          "cas:attributes"
-        ]["cas:givenName"],
-    };
-    let user = await prisma.user.findUnique({
-      where: { login: userData.login },
-    });
-    if (!user) {
-      await prisma.user.create({ data: userData });
-    }
-    const token = jwt.sign({ login: userData.login }, process.env.JWT_SECRET, {
-      expiresIn: process.env.JWT_EXPIRES_IN,
-    });
-    return response.cookie("token", token).redirect("/");
+  if (!request.query["ticket"]) {
+    return response.sendFile(path.join(__dirname, "../www/login.html"));
   }
-  return response.sendFile(path.join(__dirname, "../www/login.html"));
+  const res = await fetch(
+    `https://cas.utt.fr/cas/serviceValidate?service=${encodeURI(
+      process.env.CAS_SERVICE
+    )}&ticket=${request.query["ticket"]}`
+  );
+  const resData: {
+    ["cas:serviceResponse"]:
+      | {
+      ["cas:authenticationSuccess"]: {
+        ["cas:attributes"]: {
+          "cas:uid": string;
+          "cas:mail": string;
+          "cas:sn": string;
+          "cas:givenName": string;
+        };
+      };
+    }
+      | { "cas:authenticationFailure": unknown };
+  } = new XMLParser().parse(await res.text());
+  if ("cas:authenticationFailure" in resData["cas:serviceResponse"]) {
+    return response.redirect('/login');
+  }
+  const userData = {
+    login:
+      resData["cas:serviceResponse"]["cas:authenticationSuccess"][
+        "cas:attributes"
+        ]["cas:uid"],
+    mail: resData["cas:serviceResponse"]["cas:authenticationSuccess"][
+      "cas:attributes"
+      ]["cas:mail"],
+    lastName:
+      resData["cas:serviceResponse"]["cas:authenticationSuccess"][
+        "cas:attributes"
+        ]["cas:sn"],
+    firstName:
+      resData["cas:serviceResponse"]["cas:authenticationSuccess"][
+        "cas:attributes"
+        ]["cas:givenName"],
+  };
+  let user = await prisma.user.findUnique({
+    where: { login: userData.login },
+  });
+  if (!user) {
+    await prisma.user.create({ data: userData });
+  }
+  const token = jwt.sign({ login: userData.login }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN,
+  });
+  return response.cookie("token", token).redirect("/");
 });
 
 webRouter.get("/login/cas", async (request: Request, response: Response) => {

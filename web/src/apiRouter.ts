@@ -5,6 +5,13 @@ import {generateCode, setLastTimeChestWasAlive} from "./utils";
 
 const apiRouter = Router();
 
+apiRouter.use((request: Request, response: Response, next) => {
+  if (!request.headers['Authorisation'] || request.headers['Authorisation'] !== `Bearer ${process.env.API_KEY}`) {
+    return response.status(403).send("Invalid API Key");
+  }
+  return next();
+});
+
 apiRouter.post("/sesame", async (request: Request, response: Response) => {
   const sesame: string | undefined = request.body.code;
   if (!sesame) return response.status(400).send("Missing code");
@@ -50,7 +57,7 @@ apiRouter.post("/sesame", async (request: Request, response: Response) => {
   return response.status(200).send("Sésame ouvre toi");
 });
 
-apiRouter.get("/imstillalive", async (request: Request, response: Response) => {
+apiRouter.get("/ping", async (request: Request, response: Response) => {
   setLastTimeChestWasAlive(Date.now());
   return response.status(200).send("Good news ! (Me too)");
 });
