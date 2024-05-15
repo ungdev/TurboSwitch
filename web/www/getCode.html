@@ -59,7 +59,7 @@
                 </div>
 
                 <div class="mt-5">
-                    <h2 class="block text-6xl font-bold text-gray-800 text-center dark:text-white tracking-widest ml-1" id="sesame">----</h2>
+                    <h2 class="block text-6xl font-bold text-gray-800 text-center dark:text-white tracking-widest ml-1" id="sesame">-----</h2>
                     <h3 class="block text-2xl font-bold text-gray-800 text-center dark:text-white ml-1">
                         <span id="joycon-count" class="text-[#2d8fce] mr-2">?</span>joycons à<span id="action" class="text-[#2d8fce] ml-2">récupérer</span>
                     </h3>
@@ -124,7 +124,7 @@
 
         window.onload = () => {
             const urlSearchParams = new URLSearchParams(window.location.search);
-            document.getElementById("sesame").innerText = urlSearchParams.get("code") || "----";
+            document.getElementById("sesame").innerText = `${urlSearchParams.get("code") || "----"}E`;
             document.getElementById("joycon-count").innerText = urlSearchParams.get("joycons") || 0;
             document.getElementById("type").innerText = urlSearchParams.get("type") === 'borrow' ? "Emprunt" : "Retour";
             document.getElementById("action").innerText = document.getElementById("action-footer").innerText = urlSearchParams.get("type") === 'borrow' ? "récupérer" : "rendre";
