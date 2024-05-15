@@ -36,9 +36,10 @@ export async function generateCode() {
 export async function getJoyconsLeft() {
   const joyconBorrows = await prisma.borrow.findMany({
     where: {
-      borrowOpening: {
-        OR: [prismaUtils.validOpening, { date: { not: null } }],
-      },
+      OR: [
+        { createdAt: { gte: new Date(Date.now() - BORROW_TIMEOUT) } },
+        { borrowOpening: { date: { not: null } } },
+      ],
       returnOpening: { date: { not: null } },
     },
   });
@@ -81,6 +82,12 @@ export async function getWaitingOpening(userLogin: string) {
       date: null,
       code: { not: null },
       OR: [{ borrow: { userLogin } }, { return: { userLogin } }],
+      borrow: {
+        OR: [
+          null,
+          { createdAt: { gte: new Date(Date.now() - BORROW_TIMEOUT) } },
+        ],
+      },
     },
     ...OPENING_INCLUDE_BEFORE_FORMATTING,
   });
@@ -92,6 +99,12 @@ export async function getWaitingOpeningWithValidCode(userLogin: string) {
     where: {
       ...prismaUtils.validOpening,
       OR: [{ borrow: { userLogin } }, { return: { userLogin } }],
+      borrow: {
+        OR: [
+          null,
+          { createdAt: { gte: new Date(Date.now() - BORROW_TIMEOUT) } },
+        ],
+      },
     },
     ...OPENING_INCLUDE_BEFORE_FORMATTING,
   });
@@ -118,4 +131,5 @@ export function getLastTimeChestWasAlive() {
   return lastTimeChestWasAlive;
 }
 
-export const CODE_LIFETIME = (Number(process.env.CODE_LIFETIME) || 300) * 1000;
+export const CODE_LIFETIME = Number(process.env.CODE_LIFETIME) * 1000;
+export const BORROW_TIMEOUT = Number(process.env.BORROW_TIMEOUT) * 1000;

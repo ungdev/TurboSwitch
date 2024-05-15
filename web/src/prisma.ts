@@ -4,8 +4,7 @@ import { CODE_LIFETIME } from "./utils";
 export const prisma = new PrismaClient();
 
 const validOpening = {
-  codeGeneratedAt: { gte: new Date(Date.now() - CODE_LIFETIME) },
-  date: null,
+
 };
 
 const currentlyBorrowing = {

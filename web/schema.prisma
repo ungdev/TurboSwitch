@@ -12,11 +12,12 @@ datasource db {
 }
 
 model Borrow {
-  id              Int    @id @default(autoincrement())
+  id              Int      @id @default(autoincrement())
   userLogin       String
   joyconsTaken    Int
-  borrowOpeningId Int    @unique
-  returnOpeningId Int    @unique
+  borrowOpeningId Int      @unique
+  returnOpeningId Int      @unique
+  createdAt       DateTime @default(now())
 
   user          User    @relation(fields: [userLogin], references: [login])
   borrowOpening Opening @relation(name: "borrowOpening", fields: [borrowOpeningId], references: [id])

@@ -8,6 +8,7 @@ Table Borrow {
   joyconsTaken Int [not null]
   borrowOpeningId Int [unique, not null]
   returnOpeningId Int [unique, not null]
+  createdAt DateTime [default: `now()`, not null]
   user User [not null]
   borrowOpening Opening [not null]
   returnOpening Opening [not null]
