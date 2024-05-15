@@ -4,6 +4,7 @@ export const prisma = new PrismaClient();
 
 const validOpening = {
   codeGeneratedAt: { gte: new Date(Date.now() - 1000 * 60 * 5) },
+  date: null,
 }
 
 const currentlyBorrowing = {

@@ -1,35 +1,84 @@
-import {Request, Response, Router} from "express";
+import {NextFunction, Request, Response, Router} from "express";
 import path from "path";
 import {XMLParser} from "fast-xml-parser";
 import jwt from "jsonwebtoken";
-import {prisma, prismaUtils} from "./prisma";
-import {authenticate, generateCode, getJoyconsLeft} from "./utils";
+import {prisma} from "./prisma";
+import {
+  authenticate,
+  generateCode,
+  generateNewCode,
+  getJoyconsLeft, getLastTimeChestWasAlive,
+  getWaitingOpening,
+  getWaitingOpeningWithValidCode
+} from "./utils";
 
 const webRouter = Router();
 
-webRouter.get("/", async (request: Request, response: Response) => {
+webRouter.use(async (request: Request, response: Response, next: NextFunction) => {
+  // route /down
+  const chestAlive = Date.now() - getLastTimeChestWasAlive() < Number.parseInt(process.env.TIME_BEFORE_CHEST_DEATH) * 1000;
+  if (!request.url.startsWith('/down') && !chestAlive) {
+    return response.redirect('/down');
+  }
+  if (request.url.startsWith('/down') && chestAlive) {
+    return response.redirect('/');
+  }
+  if (request.url.startsWith('/down') && !chestAlive) {
+    return next();
+  }
+  // route /login
   const login = authenticate(request);
-  if (!login) {
+  if (!request.url.startsWith("/login") && !login) {
     return response.redirect("/login");
   }
-  if (request.query['code']) {
-    return response.sendFile(path.join(__dirname, '../www/getCode.html'));
+  if (request.url.startsWith("/login") && login) {
+    return response.redirect("/");
   }
-  const borrow = await prisma.borrow.findFirst({
-    where: { user: { login }, ...prismaUtils.currentlyBorrowing },
-  });
-  if (!borrow) {
-    return response.sendFile(path.join(__dirname, "../www/borrow.html"));
+  if (request.url.startsWith("/login") && login) {
+    return next();
   }
-  const code = await generateCode();
-  await prisma.borrow.update({where: {id: borrow.id}, data: {returnOpening: {upsert: {create: {code, codeGeneratedAt: new Date(Date.now())}, update: {code, codeGeneratedAt: new Date(Date.now())}}}}});
-  return response.redirect(`/?code=${code}`);
+  // route /borrow
+  const opening = await getWaitingOpening(login);
+  if (!request.url.startsWith("/borrow") && !opening) {
+    return response.redirect("/borrow");
+  }
+  if (request.url === "/borrow" && opening) {
+    return response.redirect("/");
+  }
+  if (request.url.startsWith("/borrow") && !opening) {
+    return next();
+  }
+  // route /code
+  if (!request.url.startsWith('/code') && opening) {
+    return response.redirect('/code');
+  }
+  if (request.url.startsWith('/code') && !opening) {
+    return response.redirect('/');
+  }
+  if (request.url.startsWith('/code') && opening) {
+    return next();
+  }
+  return next();
+});
+
+webRouter.get("/borrow", async (request: Request, response: Response) => {
+  if (!request.query['joyconsLeft']) {
+    return response.redirect(`/borrow/?joyconsLeft=${await getJoyconsLeft()}`);
+  }
+  return response.sendFile(path.join(__dirname, "../www/borrow.html"));
+});
+
+webRouter.get("/code", async (request: Request, response: Response) => {
+  const login = authenticate(request);
+  const opening = await getWaitingOpening(login);
+  if (!request.query['code'] || !request.query['joycons'] || !request.query['type'] || !await getWaitingOpeningWithValidCode(login)) {
+    const newCode = await generateNewCode(opening.id);
+    return response.redirect(`/code/?code=${newCode}&joycons=${opening.borrow.joyconsTaken}&type=${opening.type}`);
+  }
+  return response.sendFile(path.join(__dirname, '../www/getCode.html'));
 });
 
 webRouter.get("/login", async (request: Request, response: Response) => {
-  if (authenticate(request)) {
-    return response.redirect("/");
-  }
   if (request.query["ticket"]) {
     const res = await fetch(
       `https://cas.utt.fr/cas/serviceValidate?service=${encodeURI(
@@ -51,7 +100,7 @@ webRouter.get("/login", async (request: Request, response: Response) => {
         | { "cas:authenticationFailure": unknown };
     } = new XMLParser().parse(await res.text());
     if ("cas:authenticationFailure" in resData["cas:serviceResponse"]) {
-      return { status: "invalid", token: "" };
+      return response.redirect('/login');
     }
     const userData = {
       login:
@@ -90,17 +139,19 @@ webRouter.get("/login/cas", async (request: Request, response: Response) => {
   );
 });
 
-webRouter.post("/", async (request: Request, response: Response) => {
+webRouter.post("/borrow", async (request: Request, response: Response) => {
   const login = authenticate(request);
-  if (!login) {
-    return response.redirect("/login");
-  }
+  if (await getWaitingOpening(login))
+    return response.redirect("/code");
+  if (!request.body.joycons)
+    return response.redirect("/borrow");
   const joycons = Number.parseInt(request.body.joycons);
+  if (Number.isNaN(joycons)) {
+    return response.redirect("/borrow");
+  }
   const joyconsLeft = await getJoyconsLeft();
   if (joycons < 0 || joycons > joyconsLeft) {
-    return response.send(
-      `Il ne reste plus que ${joyconsLeft} joycons disponibles`
-    );
+    return response.redirect("/borrow");
   }
   const code = await generateCode();
   await prisma.borrow.create({
@@ -116,7 +167,15 @@ webRouter.post("/", async (request: Request, response: Response) => {
       user: { connect: { login } },
     },
   });
-  return response.redirect(`/?code=${code}`);
+  return response.redirect(`/code/?code=${code}`);
+});
+
+webRouter.get("/down", async (request: Request, response: Response) => {
+  response.sendFile(path.join(__dirname, "../www/down.html"));
+});
+
+webRouter.use(async (request: Request, response: Response) => {
+  return response.redirect('/');
 });
 
 export default webRouter;

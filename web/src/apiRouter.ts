@@ -1,7 +1,7 @@
 import {Request, Response, Router} from "express";
 import {prisma} from "./prisma";
 import logger from "./logger";
-import {generateCode} from "./utils";
+import {generateCode, setLastTimeChestWasAlive} from "./utils";
 
 const apiRouter = Router();
 
@@ -48,6 +48,11 @@ apiRouter.post("/sesame", async (request: Request, response: Response) => {
   }
 
   return response.status(200).send("Sésame ouvre toi");
+});
+
+apiRouter.get("/imstillalive", async (request: Request, response: Response) => {
+  setLastTimeChestWasAlive(Date.now());
+  return response.status(200).send("Good news ! (Me too)");
 });
 
 export default apiRouter;
