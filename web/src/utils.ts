@@ -28,7 +28,7 @@ export async function generateCode() {
       ciffers[Math.floor(Math.random() * 10)] +
       ciffers[Math.floor(Math.random() * 10)] +
       ciffers[Math.floor(Math.random() * 10)];
-    found = await prisma.opening.findFirst({ where: { code } });
+    found = await prisma.opening.findFirst({ where: { code, date: null } });
   } while (found);
   return code;
 }

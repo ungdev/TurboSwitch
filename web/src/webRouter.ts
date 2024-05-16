@@ -158,6 +158,17 @@ webRouter.get('/legal', async (request: Request, response: Response) => {
   return response.sendFile(path.join(__dirname, "../www/legal.html"));
 });
 
+webRouter.get('/cancel', async (request: Request, response: Response) => {
+  if (!chestAlive()) return response.redirect('/down');
+  const login = authenticate(request);
+  if (!login) return response.redirect('/login');
+  const opening = await getWaitingOpening(login);
+  if (opening && opening.type === 'borrow') {
+    await prisma.opening.update({ where: { id: opening.id }, data: { code: null, codeGeneratedAt: null } });
+  }
+  return response.redirect('/');
+});
+
 webRouter.get('/', async (request: Request, response: Response) => {
   if (!chestAlive()) return response.redirect('/down');
   const login = authenticate(request);
