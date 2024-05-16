@@ -36,6 +36,8 @@ app.use("", cookieParser());
 app.use(json());
 app.use(urlencoded({ extended: true }));
 
+app.use(express.static('public'));
+
 // Main routes
 app.use(process.env.API_PREFIX, apiRouter);
 app.use("", webRouter);

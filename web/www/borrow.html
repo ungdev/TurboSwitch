@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/main.css">
 </head>
 <body>
     <div class="flex flex-col items-center justify-center min-h-screen py-6 bg-gray-50 dark:bg-neutral-900 duration-300 transition-all">
@@ -74,10 +74,6 @@
     </div>
     
     <script defer>
-        tailwind.config = {
-            darkMode: 'class',
-        };
-        
         // On page load or when changing themes, best to add inline in `head` to avoid FOUC
         if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia(
                 '(prefers-color-scheme: dark)').matches)) {
