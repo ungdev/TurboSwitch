@@ -3,3 +3,4 @@ dbml/
 .env
 .idea/
 build/
+public/main.css

@@ -13,6 +13,7 @@ import {
   getWaitingOpening,
   OPENING_INCLUDE_BEFORE_FORMATTING,
 } from "./utils";
+import logger from "./logger";
 
 const webRouter = Router();
 
@@ -34,6 +35,7 @@ webRouter.get("/code", async (request: Request, response: Response) => {
   if (!(await getWaitingOpening(login))) return response.redirect("/");
   const opening = await getWaitingOpening(login);
   const newCode = await generateNewCode(opening.id);
+  logger.info(`Changing code from ${opening.code} to ${newCode} for opening ${opening.id}`);
   return response.render(path.join(__dirname, "../www/getCode.html"), {
     code: newCode,
     joycons: opening.borrow.joyconsTaken,
@@ -136,16 +138,18 @@ webRouter.post("/borrow", async (request: Request, response: Response) => {
       user: { connect: { login } },
     },
   });
-  return response.redirect("/code");
+  logger.info(`Borrowing ${joycons} joycons for user ${login} with code ${code}`);
+  return response.redirect('/code');
 });
 
 webRouter.get("/forceOpen", async (request: Request, response: Response) => {
   if (!chestAlive()) return response.redirect("/down");
   if (!request.query["id"]) return response.redirect("/");
+  const id = Number.parseInt(request.query['id'] as string);
   const opening = formatOpening(
     await prisma.opening.findUnique({
       where: {
-        id: request.query.id as string,
+        id,
         date: null,
         borrow: null,
       },
@@ -155,7 +159,8 @@ webRouter.get("/forceOpen", async (request: Request, response: Response) => {
   if (!opening) {
     return response.redirect("/");
   }
-  const newCode = await generateNewCode(request.query.id as string);
+  const newCode = await generateNewCode(id);
+  logger.info(`Forcing opening ${opening.id} changing code from ${opening.code} to ${newCode}`);
   response.render(path.join(__dirname, "../www/getCode.html"), {
     code: newCode,
     joycons: opening.borrow.joyconsTaken,
@@ -183,7 +188,8 @@ webRouter.get("/cancel", async (request: Request, response: Response) => {
       data: { code: null, codeGeneratedAt: null },
     });
   }
-  return response.redirect("/");
+  logger.info(`Cancelling opening ${opening.id} for user ${login}`);
+  return response.redirect('/');
 });
 
 webRouter.get("/", async (request: Request, response: Response) => {

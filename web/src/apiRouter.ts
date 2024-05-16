@@ -3,7 +3,6 @@ import { prisma } from "./prisma";
 import logger from "./logger";
 import {
   CODE_LIFETIME,
-  generateCode,
   generateNewCode,
   sendDiscordWebhook,
   setLastTimeChestWasAlive,
@@ -62,12 +61,14 @@ apiRouter.post("/sesame", async (request: Request, response: Response) => {
 
   if (opening.borrow) await generateNewCode(opening.borrow.returnOpeningId);
 
+  logger.info(`Opening chest with code ${sesame} for opening ${opening.id}`);
   return response.status(200).send("Sésame ouvre toi");
 });
 
 apiRouter.get("/ping", async (request: Request, response: Response) => {
   const interval: number = Number(request.body.interval) || undefined;
   setLastTimeChestWasAlive(Date.now(), interval);
+  logger.info("Chest pinged");
   return response.status(200).send("Good news ! (Me too)");
 });
 
@@ -83,7 +84,7 @@ apiRouter.get("/reports", async (request: Request, response: Response) => {
     },
   });
   if (borrows.length) {
-    logger.info(`Generating reports for ${borrows.length} users !`);
+    logger.info(`Generating reports for ${borrows.length} users`);
     const count = borrows.reduce((acc, borrow) => acc + borrow.joyconsTaken, 0);
     sendDiscordWebhook([
       {
@@ -110,6 +111,7 @@ apiRouter.get("/reports", async (request: Request, response: Response) => {
 });
 
 apiRouter.use(async (request: Request, response: Response) => {
+  logger.warning(`Invalid API route : ${request}. This should never happen, verify token is not compromised and chest is working properly`)
   return response.status(404).send("captain l'url làààààà");
 });
 
