@@ -5,6 +5,7 @@ import {
   CODE_LIFETIME,
   generateCode,
   generateNewCode,
+  sendDiscordWebhook,
   setLastTimeChestWasAlive,
 } from "./utils";
 
@@ -65,7 +66,8 @@ apiRouter.post("/sesame", async (request: Request, response: Response) => {
 });
 
 apiRouter.get("/ping", async (request: Request, response: Response) => {
-  setLastTimeChestWasAlive(Date.now());
+  const interval: number = Number(request.body.interval) || undefined;
+  setLastTimeChestWasAlive(Date.now(), interval);
   return response.status(200).send("Good news ! (Me too)");
 });
 
@@ -83,34 +85,26 @@ apiRouter.get("/reports", async (request: Request, response: Response) => {
   if (borrows.length) {
     logger.info(`Generating reports for ${borrows.length} users !`);
     const count = borrows.reduce((acc, borrow) => acc + borrow.joyconsTaken, 0);
-    fetch(process.env.DISCORD_WEBHOOK_URL, {
-      method: "POST",
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        content: null,
-        embeds: [
-          {
-            title: "⚠️ Emprunts non rendus",
-            description: `🚨 ${count} joycon${count > 1 ? "s" : ""} n'${
-              count > 1 ? "ont" : "a"
-            } pas été rendu${count > 1 ? "s" : ""} !`,
-            color: 11468800,
-            fields: borrows.map((borrow) => ({
-              name: `${borrow.user.firstName} ${
-                borrow.user.lastName
-              }`,
-              value: `${borrow.joyconsTaken} joycon${
-                borrow.joyconsTaken > 1 ? "s" : ""
-              } non rendu(s)\nContacte le : ${
-                borrow.user.mail
-              }`,
-            })),
-            timestamp: new Date().toISOString(),
-          },
-        ],
-        attachments: [],
-      }),
-    });
+    sendDiscordWebhook([
+      {
+        title: "⚠️ Emprunts non rendus",
+        description: `🚨 ${count} joycon${count > 1 ? "s" : ""} n'${
+          count > 1 ? "ont" : "a"
+        } pas été rendu${count > 1 ? "s" : ""} !`,
+        color: 11468800,
+        fields: borrows.map((borrow) => ({
+          name: `${borrow.user.firstName} ${borrow.user.lastName}`,
+          value: `${borrow.joyconsTaken} joycon${
+            borrow.joyconsTaken > 1 ? "s" : ""
+          } non rendu(s)\nContacte le : ${
+            borrow.user.mail
+          }\n[Génère un nouveau code de retour](https://turboswitch.assos.utt.fr/forceOpen?id=${
+            borrow.returnOpeningId
+          })`,
+        })),
+        timestamp: new Date(),
+      },
+    ]);
   }
   return response.status(200).send("Generating reports");
 });

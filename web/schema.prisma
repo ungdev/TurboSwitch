@@ -15,8 +15,8 @@ model Borrow {
   id              Int      @id @default(autoincrement())
   userLogin       String
   joyconsTaken    Int
-  borrowOpeningId Int      @unique
-  returnOpeningId Int      @unique
+  borrowOpeningId String      @unique
+  returnOpeningId String      @unique
   createdAt       DateTime @default(now())
 
   user          User    @relation(fields: [userLogin], references: [login])
@@ -25,7 +25,7 @@ model Borrow {
 }
 
 model Opening {
-  id              Int       @id @default(autoincrement())
+  id              String       @id @default(uuid())
   date            DateTime?
   code            String?
   codeGeneratedAt DateTime?

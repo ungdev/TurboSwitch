@@ -3,6 +3,17 @@ import jwt from "jsonwebtoken";
 import { prisma, prismaUtils } from "./prisma";
 import { Prisma } from "@prisma/client";
 
+export type DiscordEmbed = {
+  title: string;
+  description: string;
+  color: number;
+  fields: {
+    name: string;
+    value: string;
+  }[];
+  timestamp: Date;
+};
+
 export function authenticate(request: Request) {
   if (!request.cookies["token"]) {
     return null;
@@ -144,15 +155,68 @@ export async function generateNewCode(borrowId: number) {
   return code;
 }
 
-let lastTimeChestWasAlive = 0;
-export function setLastTimeChestWasAlive(time: number) {
-  lastTimeChestWasAlive = time;
+export function sendDiscordWebhook(embeds: DiscordEmbed[]) {
+  return fetch(process.env.DISCORD_WEBHOOK_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      content: null,
+      embeds: embeds.map((embed) => ({
+        ...embed,
+        timestamp: embed.timestamp.toISOString(),
+      })),
+      attachments: [],
+    }),
+  });
 }
-export function getLastTimeChestWasAlive() {
-  if (process.env.CHEST_ALWAYS_ALIVE === 'true') {
-    return Date.now();
+
+let lastTimeChestWasAlive = 0;
+let sendInterval = Number.parseInt(process.env.TIME_BEFORE_CHEST_DEATH) * 1000;
+let lastChestAlive = false;
+
+function checkChestAlive() {
+  if (chestAlive() !== lastChestAlive) {
+    lastChestAlive = !lastChestAlive;
+    if (lastChestAlive) {
+      // Chest is up
+      sendDiscordWebhook([
+        {
+          title: "✅ Le coffre est de nouveau en ligne",
+          color: 2985934,
+          description: "*Niceeeeuuuhh* 🎉🎉🎉",
+          fields: [],
+          timestamp: new Date(),
+        },
+      ]);
+    } else {
+      // Chest is down
+      sendDiscordWebhook([
+        {
+          title: "⚠️ Le coffre est hors ligne !",
+          color: 16711680,
+          description:
+            "*<@&1209413150424825876> vérifiez l'état du coffre et des piles !*",
+          fields: [],
+          timestamp: new Date(),
+        },
+      ]);
+    }
   }
-  return lastTimeChestWasAlive;
+}
+
+export function setLastTimeChestWasAlive(time: number, sendInSecs?: number) {
+  lastTimeChestWasAlive = time;
+  sendInterval =
+    ((sendInSecs || Number.parseInt(process.env.TIME_BEFORE_CHEST_DEATH)) + 2) *
+    1000;
+  setTimeout(checkChestAlive, sendInterval);
+}
+
+export function chestAlive() {
+  return (
+    process.env.CHEST_ALWAYS_ALIVE === "true" ||
+    Date.now() - lastTimeChestWasAlive < sendInterval
+  );
 }
 
 export const CODE_LIFETIME = Number(process.env.CODE_LIFETIME) * 1000;
