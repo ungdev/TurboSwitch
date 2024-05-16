@@ -6,8 +6,8 @@ Table Borrow {
   id Int [pk, increment]
   userLogin String [not null]
   joyconsTaken Int [not null]
-  borrowOpeningId Int [unique, not null]
-  returnOpeningId Int [unique, not null]
+  borrowOpeningId String [unique, not null]
+  returnOpeningId String [unique, not null]
   createdAt DateTime [default: `now()`, not null]
   user User [not null]
   borrowOpening Opening [not null]
@@ -15,7 +15,7 @@ Table Borrow {
 }
 
 Table Opening {
-  id Int [pk, increment]
+  id String [pk]
   date DateTime
   code String
   codeGeneratedAt DateTime
