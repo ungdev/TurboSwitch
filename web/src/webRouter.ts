@@ -206,6 +206,10 @@ webRouter.get("/", async (request: Request, response: Response) => {
   return response.redirect("/borrow");
 });
 
+webRouter.get("/main.css", async (request: Request, response: Response) => {
+  response.sendFile(path.join(__dirname, "../public/main.css"));
+});
+
 webRouter.use(async (request: Request, response: Response) => {
   return response.redirect("/");
 });

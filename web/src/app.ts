@@ -6,6 +6,7 @@ import webRouter from "./webRouter";
 import apiRouter from "./apiRouter";
 import { rateLimit } from 'express-rate-limit'
 import ejs from "ejs";
+// import compression from "compression";
 
 dotenv.config();
 const app = express();
@@ -36,8 +37,6 @@ app.engine('html', ejs.renderFile);
 app.use("", cookieParser());
 app.use(json());
 app.use(urlencoded({ extended: true }));
-
-app.use(express.static('public'));
 
 // Main routes
 app.use(process.env.API_PREFIX, apiRouter);
