@@ -207,7 +207,7 @@ function checkChestAlive() {
 export function setLastTimeChestWasAlive(time: number, sendInSecs?: number) {
   lastTimeChestWasAlive = time;
   sendInterval =
-    ((sendInSecs || Number.parseInt(process.env.TIME_BEFORE_CHEST_DEATH)) + 2) *
+    ((sendInSecs || Number.parseInt(process.env.TIME_BEFORE_CHEST_DEATH)) * Number.parseInt(process.env.PINGS_MISSED_BEFORE_CHEST_DEATH) + Number.parseInt(process.env.MAXIMAL_LATENCY_FOR_PING)) *
     1000;
   checkChestAlive();
   setTimeout(checkChestAlive, sendInterval);
