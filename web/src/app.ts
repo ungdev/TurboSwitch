@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import * as Sentry from "@sentry/node";
 import webRouter from "./webRouter";
 import apiRouter from "./apiRouter";
+import { rateLimit } from 'express-rate-limit'
 import ejs from "ejs";
 
 dotenv.config();
@@ -41,6 +42,13 @@ app.use(express.static('public'));
 // Main routes
 app.use(process.env.API_PREFIX, apiRouter);
 app.use("", webRouter);
+
+// Rate limit
+app.use(rateLimit({
+  windowMs: 10 * 1000, // 10 seconds
+  max: 15, // limit each IP to 15 requests per windowMs
+  standardHeaders: 'draft-7',
+}));
 
 // Not found
 // app.use((request: Request, response: Response) => notFound(response, Error.RouteNotFound));
