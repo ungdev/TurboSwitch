@@ -207,7 +207,7 @@ webRouter.get("/", async (request: Request, response: Response) => {
 });
 
 webRouter.get("/main.css", async (request: Request, response: Response) => {
-  response.sendFile(path.join(__dirname, "../public/main.css"));
+  response.sendFile(path.join(__dirname, "./public/main.css"));
 });
 
 webRouter.use(async (request: Request, response: Response) => {
