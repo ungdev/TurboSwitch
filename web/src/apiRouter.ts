@@ -85,6 +85,7 @@ apiRouter.get("/reports", async (request: Request, response: Response) => {
     const count = borrows.reduce((acc, borrow) => acc + borrow.joyconsTaken, 0);
     fetch(process.env.DISCORD_WEBHOOK_URL, {
       method: "POST",
+      headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
         content: null,
         embeds: [
@@ -95,17 +96,14 @@ apiRouter.get("/reports", async (request: Request, response: Response) => {
             } pas été rendu${count > 1 ? "s" : ""} !`,
             color: 11468800,
             fields: borrows.map((borrow) => ({
-              name: `[${borrow.user.firstName} ${
+              name: `${borrow.user.firstName} ${
                 borrow.user.lastName
-              }](mailto:${
-                borrow.user.mail
-              }?subject=Joycons%20non%20rendus&cc=ung@utt.fr&body=Coucou%20${borrow.user.firstName.replace(
-                /\s/g,
-                "%20"
-              )},%0D%0A%0D%0AIl%20semblerait%20que%20tu%20ne%20nous%20a%20pas%20rendu%20les%20joycons%20que%20tu%20as%20empruntés%20aujourd'hui.%0D%0AMerci%20de%20les%20rendre%20au%20plus%20vite.%0D%0A%0D%0ACordialement`,
+              }`,
               value: `${borrow.joyconsTaken} joycon${
                 borrow.joyconsTaken > 1 ? "s" : ""
-              } non rendu(s)`,
+              } non rendu(s)\nContacte le : ${
+                borrow.user.mail
+              }`,
             })),
             timestamp: new Date().toISOString(),
           },
