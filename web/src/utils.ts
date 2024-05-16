@@ -209,6 +209,7 @@ export function setLastTimeChestWasAlive(time: number, sendInSecs?: number) {
   sendInterval =
     ((sendInSecs || Number.parseInt(process.env.TIME_BEFORE_CHEST_DEATH)) + 2) *
     1000;
+  checkChestAlive();
   setTimeout(checkChestAlive, sendInterval);
 }
 
