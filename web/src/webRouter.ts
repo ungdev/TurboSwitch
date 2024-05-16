@@ -145,7 +145,7 @@ webRouter.get("/forceOpen", async (request: Request, response: Response) => {
   const opening = formatOpening(
     await prisma.opening.findUnique({
       where: {
-        id: Number.parseInt(request.query.id as string),
+        id: request.query.id as string,
         date: null,
         borrow: null,
       },
@@ -155,9 +155,7 @@ webRouter.get("/forceOpen", async (request: Request, response: Response) => {
   if (!opening) {
     return response.redirect("/");
   }
-  const newCode = await generateNewCode(
-    Number.parseInt(request.query.id as string)
-  );
+  const newCode = await generateNewCode(request.query.id as string);
   response.render(path.join(__dirname, "../www/getCode.html"), {
     code: newCode,
     joycons: opening.borrow.joyconsTaken,

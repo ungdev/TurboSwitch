@@ -143,7 +143,7 @@ export async function getWaitingOpeningWithValidCode(userLogin: string) {
   return formatOpening(opening);
 }
 
-export async function generateNewCode(borrowId: number) {
+export async function generateNewCode(borrowId: string) {
   const code = await generateCode();
   await prisma.opening.update({
     where: { id: borrowId },
