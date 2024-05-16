@@ -6,7 +6,7 @@ import webRouter from "./webRouter";
 import apiRouter from "./apiRouter";
 import { rateLimit } from 'express-rate-limit'
 import ejs from "ejs";
-// import compression from "compression";
+import compression from "compression";
 
 dotenv.config();
 const app = express();
@@ -29,7 +29,7 @@ app.engine('html', ejs.renderFile);
 // app.use(morgan());
 
 // Enable compression
-// app.use(compression());
+app.use(compression());
 
 // Security middlewares
 // app.use(cors(), helmet());
