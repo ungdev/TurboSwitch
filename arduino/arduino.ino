@@ -8,12 +8,12 @@
 #define WIFI_SSID "eduroam"
 #define WIFI_IDENTITY "ung" // Should be the same as the username
 #define WIFI_USERNAME "ung"
-#define WIFI_PASSWORD "aaaa"
+#define WIFI_PASSWORD "GiTTPNsaMxhau3tvVZjW"
 
 #define INTERVAL 120 // Interval in seconds to ping the server
 
 #define HTTP_SERVER "https://turboswitch.assos.utt.fr"
-#define BEARER_PASSWORD "test"
+#define BEARER_PASSWORD "lzRKko8vV6S3fKIxRmPIa2zgDo7LUr2XtMKLkmqnkvHUwLUZXRmAZvqsfkn8QkaGWGTmz2EtiSLHj2ZkDafNg3arG6lXjFoulOFHOgTzuTIzE3xvh2fE1JSgx5yWtniS"
 
 // Time variables
 #define NTP_SERVER "time.nist.gov"
@@ -219,7 +219,8 @@ void loop()
     if (millis() - lastPing > INTERVAL * 1000)
     {
         logging("HTTP", "Pinging server");
-        int httpResponseCode = sendHTTPRequest(false, String("/api/ping?interval=" + INTERVAL), "");
+        String endpoint = "/api/ping?interval=" + String(INTERVAL);
+        int httpResponseCode = sendHTTPRequest(false, endpoint, "");
 
         if (httpResponseCode == 200)
         {
