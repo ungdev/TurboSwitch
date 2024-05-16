@@ -68,7 +68,7 @@ apiRouter.post("/sesame", async (request: Request, response: Response) => {
 apiRouter.get("/ping", async (request: Request, response: Response) => {
   const interval: number = Number(request.body.interval) || undefined;
   setLastTimeChestWasAlive(Date.now(), interval);
-  logger.info("Chest pinged");
+  logger.info(`Chest pinged. Next ping in ${interval}`);
   return response.status(200).send("Good news ! (Me too)");
 });
 
