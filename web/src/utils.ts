@@ -41,6 +41,7 @@ export async function getJoyconsLeft() {
         { borrowOpening: { date: { not: null } } },
       ],
       returnOpening: { date: null },
+      borrowOpening: { code: { not: null } },
     },
   });
   return (
